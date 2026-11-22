@@ -1,381 +1,191 @@
-# projects
-
-这是一个基于 [Next.js 16](https://nextjs.org) + [shadcn/ui](https://ui.shadcn.com) 的全栈应用项目，由扣子编程 CLI 创建。
-
-## 快速开始
-
-### 启动开发服务器
-
-```bash
-coze-dev dev
-```
-
-启动后，在浏览器中打开 [http://localhost:5000](http://localhost:5000) 查看应用。
-
-开发服务器支持热更新，修改代码后页面会自动刷新。
-
-### 构建生产版本
-
-```bash
-coze-dev build
-```
-
-### 启动生产服务器
-
-```bash
-coze-dev start
-```
-
-## 项目结构
-
-```
-src/
-├── app/                      # Next.js App Router 目录
-│   ├── layout.tsx           # 根布局组件
-│   ├── page.tsx             # 首页
-│   ├── globals.css          # 全局样式（包含 shadcn 主题变量）
-│   └── [route]/             # 其他路由页面
-├── components/              # React 组件目录
-│   └── ui/                  # shadcn/ui 基础组件（优先使用）
-│       ├── button.tsx
-│       ├── card.tsx
-│       └── ...
-├── lib/                     # 工具函数库
-│   └── utils.ts            # cn() 等工具函数
-└── hooks/                   # 自定义 React Hooks（可选）
-
-server/
-├── index.ts                 # 自定义服务器入口
-├── tsconfig.json           # Server TypeScript 配置
-└── dist/                    # 编译输出目录（自动生成）
-```
-
-## 核心开发规范
-
-### 1. 组件开发
-
-**优先使用 shadcn/ui 基础组件**
-
-本项目已预装完整的 shadcn/ui 组件库，位于 `src/components/ui/` 目录。开发时应优先使用这些组件作为基础：
-
-```tsx
-// ✅ 推荐：使用 shadcn 基础组件
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-
-export default function MyComponent() {
-  return (
-    <Card>
-      <CardHeader>标题</CardHeader>
-      <CardContent>
-        <Input placeholder="输入内容" />
-        <Button>提交</Button>
-      </CardContent>
-    </Card>
-  );
-}
-```
-
-**可用的 shadcn 组件清单**
-
-- 表单：`button`, `input`, `textarea`, `select`, `checkbox`, `radio-group`, `switch`, `slider`
-- 布局：`card`, `separator`, `tabs`, `accordion`, `collapsible`, `scroll-area`
-- 反馈：`alert`, `alert-dialog`, `dialog`, `toast`, `sonner`, `progress`
-- 导航：`dropdown-menu`, `menubar`, `navigation-menu`, `context-menu`
-- 数据展示：`table`, `avatar`, `badge`, `hover-card`, `tooltip`, `popover`
-- 其他：`calendar`, `command`, `carousel`, `resizable`, `sidebar`
-
-详见 `src/components/ui/` 目录下的具体组件实现。
-
-### 2. 路由开发
-
-Next.js 使用文件系统路由，在 `src/app/` 目录下创建文件夹即可添加路由：
-
-```bash
-# 创建新路由 /about
-src/app/about/page.tsx
-
-# 创建动态路由 /posts/[id]
-src/app/posts/[id]/page.tsx
-
-# 创建路由组（不影响 URL）
-src/app/(marketing)/about/page.tsx
-
-# 创建 API 路由
-src/app/api/users/route.ts
-```
-
-**页面组件示例**
-
-```tsx
-// src/app/about/page.tsx
-import { Button } from '@/components/ui/button';
-
-export const metadata = {
-  title: '关于我们',
-  description: '关于页面描述',
-};
-
-export default function AboutPage() {
-  return (
-    <div>
-      <h1>关于我们</h1>
-      <Button>了解更多</Button>
-    </div>
-  );
-}
-```
-
-**动态路由示例**
-
-```tsx
-// src/app/posts/[id]/page.tsx
-export default async function PostPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
-  return <div>文章 ID: {id}</div>;
-}
-```
-
-**API 路由示例**
-
-```tsx
-// src/app/api/users/route.ts
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json({ users: [] });
-}
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  return NextResponse.json({ success: true });
-}
-```
-
-### 3. 依赖管理
-
-**必须使用 pnpm 管理依赖**
-
-```bash
-# ✅ 安装依赖
-pnpm install
-
-# ✅ 添加新依赖
-pnpm add package-name
-
-# ✅ 添加开发依赖
-pnpm add -D package-name
-
-# ❌ 禁止使用 npm 或 yarn
-# npm install  # 错误！
-# yarn add     # 错误！
-```
-
-项目已配置 `preinstall` 脚本，使用其他包管理器会报错。
-
-### 4. 样式开发
-
-**使用 Tailwind CSS v4**
-
-本项目使用 Tailwind CSS v4 进行样式开发，并已配置 shadcn 主题变量。
-
-```tsx
-// 使用 Tailwind 类名
-<div className="flex items-center gap-4 p-4 rounded-lg bg-background">
-  <Button className="bg-primary text-primary-foreground">
-    主要按钮
-  </Button>
-</div>
-
-// 使用 cn() 工具函数合并类名
-import { cn } from '@/lib/utils';
-
-<div className={cn(
-  "base-class",
-  condition && "conditional-class",
-  className
-)}>
-  内容
-</div>
-```
-
-**主题变量**
-
-主题变量定义在 `src/app/globals.css` 中，支持亮色/暗色模式：
-
-- `--background`, `--foreground`
-- `--primary`, `--primary-foreground`
-- `--secondary`, `--secondary-foreground`
-- `--muted`, `--muted-foreground`
-- `--accent`, `--accent-foreground`
-- `--destructive`, `--destructive-foreground`
-- `--border`, `--input`, `--ring`
-
-### 5. 表单开发
-
-推荐使用 `react-hook-form` + `zod` 进行表单开发：
-
-```tsx
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-
-const formSchema = z.object({
-  username: z.string().min(2, '用户名至少 2 个字符'),
-  email: z.string().email('请输入有效的邮箱'),
-});
-
-export default function MyForm() {
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: { username: '', email: '' },
-  });
-
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
-  };
-
-  return (
-    <form onSubmit={form.handleSubmit(onSubmit)}>
-      <Input {...form.register('username')} />
-      <Input {...form.register('email')} />
-      <Button type="submit">提交</Button>
-    </form>
-  );
-}
-```
-
-### 6. 数据获取
-
-**服务端组件（推荐）**
-
-```tsx
-// src/app/posts/page.tsx
-async function getPosts() {
-  const res = await fetch('https://api.example.com/posts', {
-    cache: 'no-store', // 或 'force-cache'
-  });
-  return res.json();
-}
-
-export default async function PostsPage() {
-  const posts = await getPosts();
-
-  return (
-    <div>
-      {posts.map(post => (
-        <div key={post.id}>{post.title}</div>
-      ))}
-    </div>
-  );
-}
-```
-
-**客户端组件**
-
-```tsx
-'use client';
-
-import { useEffect, useState } from 'react';
-
-export default function ClientComponent() {
-  const [data, setData] = useState(null);
-
-  useEffect(() => {
-    fetch('/api/data')
-      .then(res => res.json())
-      .then(setData);
-  }, []);
-
-  return <div>{JSON.stringify(data)}</div>;
-}
-```
-
-## 常见开发场景
-
-### 添加新页面
-
-1. 在 `src/app/` 下创建文件夹和 `page.tsx`
-2. 使用 shadcn 组件构建 UI
-3. 根据需要添加 `layout.tsx` 和 `loading.tsx`
-
-### 创建业务组件
-
-1. 在 `src/components/` 下创建组件文件（非 UI 组件）
-2. 优先组合使用 `src/components/ui/` 中的基础组件
-3. 使用 TypeScript 定义 Props 类型
-
-### 添加全局状态
-
-推荐使用 React Context 或 Zustand：
-
-```tsx
-// src/lib/store.ts
-import { create } from 'zustand';
-
-interface Store {
-  count: number;
-  increment: () => void;
-}
-
-export const useStore = create<Store>((set) => ({
-  count: 0,
-  increment: () => set((state) => ({ count: state.count + 1 })),
-}));
-```
-
-### 集成数据库
-
-推荐使用 Prisma 或 Drizzle ORM，在 `src/lib/db.ts` 中配置。
+# 小张老师
+
+面向托育保育、幼儿照护比赛现场的中文语音交互演示。应用不接入传感器、不调用大模型生成答案；识别文字只与可维护的固定话术表匹配，命中后逐字展示并原样播报。
+
+## 功能概览
+
+- 四阶段语音状态：**等待唤醒、正在聆听、正在思考、正在播报**。
+- 支持仅说“小张老师”，固定回复“我在，请说”并自动继续聆听。
+- 支持“小张老师＋指令”一句话输入，自动去掉开头唤醒词后匹配。
+- 关键词阶段始终先于相似语句阶段；同阶段按数字优先级和稳定列表顺序处理。
+- 当前识别文字、固定回复、最近命中场景和匹配方式同屏展示。
+- 支持取消聆听、手动完成录音、停止播报、重新播放和文本模拟识别。
+- 独立话术管理页面，支持新增、编辑、启停、删除、搜索和恢复默认。
+- 语速、音量与话术均持久化到当前浏览器，刷新后保留。
+- 服务端 ASR/TTS 接口与 Web Speech API 自动回退，未配置密钥也可演示。
 
 ## 技术栈
 
-- **框架**: Next.js 16.1.1 (App Router)
-- **UI 组件**: shadcn/ui (基于 Radix UI)
-- **样式**: Tailwind CSS v4
-- **表单**: React Hook Form + Zod
-- **图标**: Lucide React
-- **字体**: Geist Sans & Geist Mono
-- **包管理器**: pnpm 9+
-- **TypeScript**: 5.x
+- Next.js 16 App Router / React 19 / TypeScript 5
+- Tailwind CSS 4 / shadcn/ui / Radix UI / Lucide
+- Vitest（纯匹配器单元测试）
+- `coze-coding-dev-sdk`（可选服务端语音识别与合成）
+- Web Speech API（浏览器演示回退）
 
-## 参考文档
+## 启动与检查
 
-- [Next.js 官方文档](https://nextjs.org/docs)
-- [shadcn/ui 组件文档](https://ui.shadcn.com)
-- [Tailwind CSS 文档](https://tailwindcss.com/docs)
-- [React Hook Form](https://react-hook-form.com)
+环境要求：Node.js 24、pnpm。
 
-## 重要提示
+```bash
+pnpm install
+pnpm dev
+```
 
-1. **必须使用 pnpm** 作为包管理器
-2. **优先使用 shadcn/ui 组件** 而不是从零开发基础组件
-3. **遵循 Next.js App Router 规范**，正确区分服务端/客户端组件
-4. **使用 TypeScript** 进行类型安全开发
-5. **使用 `@/` 路径别名** 导入模块（已配置）
+在沙箱中也可以使用项目预设命令：
 
-## 云盘源码与本地开发
+```bash
+coze dev
+```
 
-Vite、Next.js、Nuxt 的 Unix 开发脚本在 `COZE_DRIVE_ROOT`（默认 `/Coze/Drive`）内通过
-`scripts/local-workspace.cjs` 将源码用 `rsync` 同步到本机临时目录。系统需提供 Node.js、pnpm、bash 和 rsync。
-所有开发与修复仍在云盘源码目录完成，从该目录执行 `.coze` 的 `[dev]` 命令。
+常用验证命令：
 
-- `prepare.sh` 同步并在本地安装依赖；安装成功且云盘依赖输入未变化时，仅将更新的锁文件回写云盘。
-- `dev.sh` 在本地镜像运行开发服务，每轮 rsync 结束后等待一秒再同步，框架监听本地文件进行热更新。
-  同步失败或依赖输入变化时停止服务；修复后重新运行 `prepare.sh` / `dev.sh`。
-- `validate.sh` 使用独立的本地 `check` 目录，避免类型生成影响正在运行的 `dev` 服务。
-- 同步排除 `.git`、`node_modules`、日志和框架输出；不要在镜像修复源码或将依赖、编译产物回传云盘。
-  日志和 PID 默认保留在源码目录的 `logs/`，实际镜像路径见脚本输出。
+```bash
+pnpm test          # 运行匹配器测试
+pnpm test:watch    # 监听模式运行测试
+pnpm lint          # TypeScript、ESLint、Stylelint 检查
+pnpm build         # 生产构建
+pnpm start         # 构建后启动生产服务
+```
 
-本地镜像仅用于 `[dev].build/run/validate`。部署配置、`build.sh`、`start.sh` 保持原流程；
-普通本地目录和 Windows PowerShell 入口也保持原流程。
-存量项目通过新版 CLI 的 `coze-dev patch --dry-run` / `coze-dev patch` 升级，沿用 patch 总开关。
-仅升级完整匹配旧模板的三个 Unix 开发脚本并保留端口；自定义开发脚本、命令或同名 helper 会跳过。
+页面地址：
+
+- 首页：`/`
+- 话术管理：`/scenarios`
+- 语音服务状态：`/api/speech/status`
+
+## 浏览器语音演示
+
+1. 推荐使用最新版 **Chrome 或 Edge**，通过 HTTPS 或 localhost 访问，并允许麦克风权限。
+2. 点击首页“开始聆听”。仅说“小张老师”时，页面固定逐字显示并播报“我在，请说”，随后自动进入下一次聆听。
+3. 也可以直接说“小张老师，孩子发烧怎么办”。应用去掉开头唤醒词，再匹配剩余指令。
+4. 识别后进入“正在思考”，完成固定话术匹配和语音准备后进入“正在播报”。
+5. 聆听时可取消；服务端录音模式最长录音 8 秒，也可点击“完成识别”提前结束。
+6. 无麦克风、浏览器不支持语音识别或现场识别不稳定时，在“文本输入模拟识别”中输入同样文本，仍可完整演示匹配、逐字显示和播报流程。
+
+浏览器语音识别与合成使用 Web Speech API，具体识别服务和中文音色由浏览器及操作系统决定。某些浏览器即使界面可用，语音识别仍可能依赖网络；比赛前应使用目标设备实际验证。
+
+## 服务端语音配置
+
+服务端适配层使用 `coze-coding-dev-sdk`。凭据只从**服务端环境变量或运行平台的服务端凭据上下文**读取，不进入客户端包。
+
+本地服务端环境变量示例（仅变量名和占位符）：
+
+```bash
+COZE_API_KEY=<SERVER_SIDE_API_KEY>
+```
+
+将占位符替换为实际服务端凭据后再启动服务。请勿把真实密钥提交到源码、README 或前端文件。
+
+密钥安全约束：
+
+- 禁止使用 `NEXT_PUBLIC_` 或任何其他客户端可见变量存放密钥。
+- 前端只请求同源 `/api/speech/*` 接口。
+- 状态接口仅返回 `serverConfigured: boolean`，绝不返回凭据内容。
+- 接口错误与日志只保留通用错误信息，不记录密钥或完整请求头。
+- 未配置时接口返回可降级的业务响应，前端自动回退浏览器能力，不阻塞演示。
+
+### 服务端接口
+
+| 接口 | 方法 | 用途 |
+| --- | --- | --- |
+| `/api/speech/status` | GET | 获取服务端语音是否已配置的安全布尔状态 |
+| `/api/speech/tts` | POST | 对提交的固定回复执行文本转语音，返回 Base64 MP3 |
+| `/api/speech/asr` | POST | 接收 `audio/*` 录音并返回识别文本 |
+
+TTS 请求示例字段：
+
+```json
+{
+  "text": "我在，请说",
+  "speechRate": 0,
+  "loudness": 40
+}
+```
+
+- `speechRate`：-50 到 100。
+- `loudness`：-50 到 50。
+- 文本上限 800 字；录音请求上限 5 MB。
+- 未配置服务端凭据时，TTS 返回 `available: false`、ASR 返回 `available: false`，由前端降级处理。
+- 服务端实际调用失败时，前端也会尝试浏览器识别或播报；服务端不伪造音频、识别文本或配置状态。
+
+## 匹配规则
+
+纯函数位于 `src/lib/speech/matcher.ts`，不依赖浏览器、React 或网络。
+
+1. 去除空白和标点，统一英文大小写。
+2. 识别开头的“小张老师”；仅剩唤醒词时固定返回“我在，请说”。
+3. 仅在启用场景中，先遍历全部明确关键词，使用“指令包含关键词”规则。
+4. 只有关键词阶段完全未命中，才遍历全部相似语句。
+5. 相似度由字符二元组 Dice 系数和单字符 F1 加权得到，本地可解释、阈值固定，不调用大模型。
+6. 同阶段有多个候选时，数字优先级越小越优先；相同优先级保持话术数组中的原始顺序。
+7. 命中后使用场景中的 `reply` 原始字符串，不裁剪、不改标点、不扩写。
+8. 未匹配时固定返回“我暂时没有听清，请再说一次”。
+
+内置 8 条场景：异物卡喉、发热应对、跌倒磕碰、进餐照护、午睡巡查、情绪安抚、洗手指导、家长沟通。急救或诊疗相关提示只融入对应固定话术，不在播报末尾额外拼接通用免责声明。
+
+## 话术管理
+
+进入“话术管理”页面，可维护：
+
+- 场景名称（必填）
+- 数字优先级（必填，0–9999 整数，数值越小越优先）
+- 触发关键词列表（每行一条，至少一条）
+- 相似语句列表（每行一条，至少一条）
+- 固定回复（必填，保存后原样播报）
+- 启用状态
+
+新增和保存均有反馈；删除和恢复默认均需二次确认。首页与管理页共享同一份状态，保存后无需刷新首页。
+
+话术与设置使用浏览器 `localStorage` 持久化，作用域为**当前浏览器的当前站点**。清除站点数据、使用无痕模式或更换设备/浏览器不会自动同步；恢复默认会覆盖当前浏览器中的全部话术改动。
+
+## 比赛使用建议
+
+- 在正式使用的设备上提前确认中文语音音色、音量、麦克风权限和浏览器兼容性。
+- 评委较远时优先使用桌面或大屏展示；首页识别与回复卡片采用大字号，手机端会自动改为纵向布局。
+- 开场先用“仅唤醒词”演示自动续听，再用一句话指令演示关键词命中。
+- 通过文本模拟准备发热应对、异物卡喉、情绪安抚等备用流程，避免现场环境噪声影响展示。
+- 在话术管理中演示编辑后即时生效、停用后不再匹配，以及恢复默认的二次确认。
+- 连续演示时等待当前阶段结束，或使用“停止播报”后再提交下一条；状态机也会主动阻止重复触发与音频重叠。
+
+## 测试覆盖
+
+`src/lib/speech/matcher.test.ts` 覆盖：
+
+- 仅唤醒词与唤醒词带标点
+- “小张老师＋指令”
+- 明确关键词阶段优先于高优先级相似语句场景
+- 多场景数字优先级冲突与同优先级稳定顺序
+- 相似语句命中
+- 未匹配固定回复
+- 停用场景跳过
+- 编辑后的关键词与逐字固定回复立即生效
+
+## 目录与维护
+
+```text
+src/
+├── app/
+│   ├── api/speech/          # 服务端 ASR、TTS、状态接口
+│   ├── scenarios/           # 独立话术管理路由
+│   └── page.tsx             # 首页
+├── components/
+│   ├── providers/           # 话术与演示设置持久化状态
+│   ├── scenarios/           # 话术列表、编辑表单、二次确认
+│   ├── voice/               # 语音控制、状态、识别与回复 UI
+│   └── ui/                  # shadcn/ui 基础组件
+├── hooks/use-voice-demo.ts  # 四阶段语音流程与并发保护
+├── lib/speech/
+│   ├── defaults.ts          # 内置固定话术
+│   ├── matcher.ts           # 可单测的纯匹配器
+│   ├── voice-machine.ts     # 状态定义与合法迁移
+│   └── browser-recognition.ts
+├── server/speech-service.ts # 服务端 SDK 适配层
+└── types/web-speech.d.ts    # Web Speech API 类型
+```
+
+## 限制
+
+- 不包含登录、多用户云同步、传感器接入或大模型回答。
+- 浏览器语音能力与中文音色因浏览器、操作系统和网络环境而异。
+- 文本模拟可以绕过识别过程，但不会绕过真实话术匹配与固定回复流程。
+- 当前数据持久化面向单设备比赛演示，不是跨设备数据库。

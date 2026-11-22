@@ -63,3 +63,18 @@
 
 - 模板默认预装核心组件库 `shadcn/ui`，位于`src/components/ui/`目录下
 - Next.js 项目**必须默认**采用 shadcn/ui 组件、风格和规范，**除非用户指定用其他的组件和规范。**
+
+## 本项目维护要点
+
+- 首页语音流程位于 `src/hooks/use-voice-demo.ts`，四阶段定义与合法迁移位于 `src/lib/speech/voice-machine.ts`。
+- 话术匹配必须保持 `src/lib/speech/matcher.ts` 为纯函数：先关键词、后相似语句，再按数字优先级和稳定列表顺序处理；命中后不得改写固定回复。
+- 修改匹配逻辑时必须同步更新并运行 `src/lib/speech/matcher.test.ts`。
+- 话术和演示设置由 `src/components/providers/app-provider.tsx` 持久化到当前浏览器；新增字段时需考虑旧本地数据的兼容。
+- 服务端语音凭据只能在 `src/server/speech-service.ts` 及 API Route 的服务端运行时使用，禁止进入客户端变量、响应或日志。
+- 修改样式前先阅读 `DESIGN.md`；完整启动、语音模式和接口说明见 `README.md`。
+
+## 常用验证命令
+
+- 单元测试：`pnpm test`
+- 静态检查：`pnpm lint`
+- 生产构建：`pnpm build`

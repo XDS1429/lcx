@@ -1,69 +1,31 @@
 import type { Metadata } from 'next';
+import { AppHeader } from '@/components/app-header';
+import { AppProvider } from '@/components/providers/app-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: '新应用 | 扣子编程',
-    template: '%s | 扣子编程',
+    default: '小张老师｜托育照护语音交互演示',
+    template: '%s｜小张老师',
   },
-  description:
-    '扣子编程是一款一站式云端 Vibe Coding 开发平台。通过对话轻松构建智能体、工作流和网站，实现从创意到上线的无缝衔接。',
-  keywords: [
-    '扣子编程',
-    'Coze Code',
-    'Vibe Coding',
-    'AI 编程',
-    '智能体搭建',
-    '工作流搭建',
-    '网站搭建',
-    '网站部署',
-    '全栈开发',
-    'AI 工程师',
-  ],
-  authors: [{ name: 'Coze Code Team', url: 'https://code.coze.cn' }],
-  generator: 'Coze Code',
-  // icons: {
-  //   icon: '',
-  // },
-  openGraph: {
-    title: '扣子编程 | 你的 AI 工程师已就位',
-    description:
-      '我正在使用扣子编程 Vibe Coding，让创意瞬间上线。告别拖拽，拥抱心流。',
-    url: 'https://code.coze.cn',
-    siteName: '扣子编程',
-    locale: 'zh_CN',
-    type: 'website',
-    // images: [
-    //   {
-    //     url: '',
-    //     width: 1200,
-    //     height: 630,
-    //     alt: '扣子编程 - 你的 AI 工程师',
-    //   },
-    // ],
-  },
-  // twitter: {
-  //   card: 'summary_large_image',
-  //   title: 'Coze Code | Your AI Engineer is Here',
-  //   description:
-  //     'Build and deploy full-stack applications through AI conversation. No env setup, just flow.',
-  //   // images: [''],
-  // },
-  robots: {
-    index: true,
-    follow: true,
-  },
+  description: '面向托育保育与幼儿照护比赛现场的中文语音交互演示，支持固定话术匹配、语音播报和话术管理。',
+  keywords: ['托育保育', '幼儿照护', '语音交互', '比赛演示', '小张老师'],
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={`antialiased`}>
-        {children}
+    <html lang="zh-CN" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body>
+        <AppProvider>
+          <div className="relative min-h-screen overflow-x-hidden">
+            <AppHeader />
+            <main className="relative z-10">{children}</main>
+            <footer className="relative z-10 mx-auto flex max-w-[1440px] flex-col gap-2 px-5 pb-7 pt-10 text-xs leading-5 text-[#718076] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+              <span>小张老师 · 托育照护语音交互演示</span>
+              <span>固定话术驱动 · 不调用大模型生成回复 · 不接入传感器</span>
+            </footer>
+          </div>
+        </AppProvider>
       </body>
     </html>
   );
