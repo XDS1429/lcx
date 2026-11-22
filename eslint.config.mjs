@@ -45,6 +45,7 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next (trailing slash prunes the whole
     // directory instead of walking into it):
     '.next/',
+    '.next-dev/',
     'out/',
     'build/',
     'next-env.d.ts',
