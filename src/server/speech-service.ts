@@ -31,6 +31,7 @@ export async function synthesizeSpeech({
   const result = await client.synthesize({
     uid: 'xiao-zhang-teacher-demo',
     text,
+    speaker: 'zh_female_santongyongns_saturn_bigtts',
     audioFormat: 'mp3',
     sampleRate: 24000,
     speechRate: Math.round(clamp((rate - 1) * 100, -50, 100)),
