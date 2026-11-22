@@ -11,7 +11,7 @@ import {
   requestServerRecognition,
   requestServerSpeech,
 } from '@/lib/speech/client-api';
-import { resolveSpeechInput } from '@/lib/speech/matcher';
+import { extractWakeWordInput, resolveSpeechInput } from '@/lib/speech/matcher';
 import type { Scenario, SpeechResolution, SpeechSettings } from '@/lib/speech/types';
 import { voiceMachineReducer, type VoicePhase } from '@/lib/speech/voice-machine';
 
@@ -29,7 +29,8 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
   const [displayedReply, setDisplayedReply] = useState('');
   const [lastReply, setLastReply] = useState('');
   const [lastResult, setLastResult] = useState<SpeechResolution | null>(null);
-  const [notice, setNotice] = useState('点击“开始聆听”，或先输入一句话体验。');
+  const [notice, setNotice] = useState('点击开启关键词唤醒，授权后说“小张老师”即可。');
+  const [wakeWordEnabled, setWakeWordEnabled] = useState(false);
   const [serverConfigured, setServerConfigured] = useState<boolean | null>(null);
   const [capabilities, setCapabilities] = useState<VoiceCapabilities>({
     browserRecognition: false,
@@ -50,6 +51,9 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
   const typingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recordingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wakeRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const wakeWordEnabledRef = useRef(false);
+  const wakeBufferRef = useRef('');
 
   useEffect(() => {
     scenariosRef.current = scenarios;
@@ -105,6 +109,13 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     }
   }
 
+  function clearWakeRestartTimer() {
+    if (wakeRestartTimerRef.current) {
+      clearTimeout(wakeRestartTimerRef.current);
+      wakeRestartTimerRef.current = null;
+    }
+  }
+
   function stopMediaTracks() {
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
     mediaStreamRef.current = null;
@@ -129,6 +140,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
 
   function stopCapture() {
     clearRecordingTimer();
+    clearWakeRestartTimer();
     const recognition = recognitionRef.current;
     recognitionRef.current = null;
     if (recognition) {
@@ -172,10 +184,148 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     setDisplayedReply(text);
     transition('FINISH');
 
-    if (resumeListening) {
+    if (resumeListening || wakeWordEnabledRef.current) {
       finishTimerRef.current = setTimeout(() => {
-        if (sessionRef.current === session) void startListening();
+        if (sessionRef.current !== session) return;
+        if (resumeListening) {
+          void startListening();
+        } else {
+          startWakeWordRecognition(session);
+        }
       }, 320);
+    }
+  }
+
+  function scheduleWakeWordRestart(session: number, delay = 350) {
+    if (
+      !wakeWordEnabledRef.current ||
+      sessionRef.current !== session ||
+      phaseRef.current !== 'idle' ||
+      processingRef.current
+    ) {
+      return;
+    }
+
+    clearWakeRestartTimer();
+    wakeRestartTimerRef.current = setTimeout(() => {
+      wakeRestartTimerRef.current = null;
+      startWakeWordRecognition(session);
+    }, delay);
+  }
+
+  function startWakeWordMode() {
+    if (phaseRef.current !== 'idle' || processingRef.current) return;
+    if (!getRecognitionConstructor()) {
+      setNotice('当前浏览器不支持关键词唤醒，请使用单次手动聆听或文本输入。');
+      return;
+    }
+
+    stopPlayback();
+    stopCapture();
+    sessionRef.current += 1;
+    wakeWordEnabledRef.current = true;
+    setWakeWordEnabled(true);
+    setInterimText('');
+    startWakeWordRecognition(sessionRef.current);
+  }
+
+  function stopWakeWordMode() {
+    if (!wakeWordEnabledRef.current) return;
+    wakeWordEnabledRef.current = false;
+    setWakeWordEnabled(false);
+    clearWakeRestartTimer();
+
+    if (phaseRef.current === 'idle') {
+      sessionRef.current += 1;
+      stopCapture();
+      wakeBufferRef.current = '';
+      setInterimText('');
+      setNotice('关键词唤醒已关闭，可使用单次手动聆听或文本输入。');
+    } else {
+      setNotice('关键词唤醒已关闭，当前操作将继续完成。');
+    }
+  }
+
+  function startWakeWordRecognition(session: number) {
+    if (
+      !wakeWordEnabledRef.current ||
+      sessionRef.current !== session ||
+      phaseRef.current !== 'idle' ||
+      processingRef.current
+    ) {
+      return;
+    }
+
+    const recognition = createBrowserRecognition(true);
+    if (!recognition) {
+      wakeWordEnabledRef.current = false;
+      setWakeWordEnabled(false);
+      setNotice('当前浏览器不支持关键词唤醒，请使用单次手动聆听或文本输入。');
+      return;
+    }
+
+    clearWakeRestartTimer();
+    recognitionRef.current = recognition;
+    wakeBufferRef.current = '';
+    setNotice('语音唤醒中，请说“小张老师”；未说唤醒词的对话不会进入指令流程。');
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      if (
+        sessionRef.current !== session ||
+        phaseRef.current !== 'idle' ||
+        !wakeWordEnabledRef.current
+      ) {
+        return;
+      }
+
+      let finalTranscript = '';
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        if (result.isFinal) finalTranscript += result[0]?.transcript ?? '';
+      }
+      if (!finalTranscript.trim()) return;
+
+      wakeBufferRef.current = `${wakeBufferRef.current}${finalTranscript}`.slice(-120);
+      const wakeInput = extractWakeWordInput(wakeBufferRef.current);
+      if (!wakeInput) return;
+
+      stopCapture();
+      wakeBufferRef.current = '';
+      transition('START');
+      setNotice('已听到“小张老师”，正在处理语音指令。');
+      processText(wakeInput, session, true);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      if (sessionRef.current !== session || event.error === 'aborted') return;
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        wakeWordEnabledRef.current = false;
+        setWakeWordEnabled(false);
+        setNotice('麦克风未授权，关键词唤醒已关闭；请允许权限后重新开启。');
+      } else if (event.error !== 'no-speech') {
+        setNotice('关键词识别暂时中断，将自动重试；也可使用单次手动聆听。');
+      }
+    };
+
+    recognition.onend = () => {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      if (
+        sessionRef.current === session &&
+        phaseRef.current === 'idle' &&
+        wakeWordEnabledRef.current &&
+        !processingRef.current
+      ) {
+        scheduleWakeWordRestart(session, 500);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch {
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
+      wakeWordEnabledRef.current = false;
+      setWakeWordEnabled(false);
+      setNotice('关键词唤醒启动失败，请重新开启，或改用单次手动聆听。');
     }
   }
 
@@ -259,6 +409,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     if (!text) {
       setNotice('没有听清，请再说一次，或使用文本输入。');
       transition('FINISH');
+      scheduleWakeWordRestart(session);
       return;
     }
 
@@ -281,6 +432,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     if (!recognition || sessionRef.current !== session) {
       setNotice('当前浏览器不支持语音识别，请使用文本输入完成演示。');
       transition('CANCEL');
+      scheduleWakeWordRestart(session);
       return;
     }
 
@@ -301,17 +453,22 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     };
     recognition.onerror = (event) => {
       if (sessionRef.current !== session || event.error === 'aborted') return;
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        wakeWordEnabledRef.current = false;
+        setWakeWordEnabled(false);
+      }
       const message =
-        event.error === 'not-allowed'
+        event.error === 'not-allowed' || event.error === 'service-not-allowed'
           ? '麦克风权限未开启，请允许访问或改用文本输入。'
           : event.error === 'no-speech'
             ? '没有听到声音，请靠近麦克风后再试。'
             : '浏览器识别暂不可用，请重试或改用文本输入。';
       setNotice(message);
       transition('CANCEL');
+      scheduleWakeWordRestart(session);
     };
     recognition.onend = () => {
-      recognitionRef.current = null;
+      if (recognitionRef.current === recognition) recognitionRef.current = null;
       if (
         sessionRef.current === session &&
         phaseRef.current === 'listening' &&
@@ -323,6 +480,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
             : current,
         );
         transition('CANCEL');
+        scheduleWakeWordRestart(session);
       }
     };
 
@@ -332,6 +490,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     } catch {
       setNotice('识别尚未准备好，请稍后再试或使用文本输入。');
       transition('CANCEL');
+      scheduleWakeWordRestart(session);
     }
   }
 
@@ -363,6 +522,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
           if (audio.size === 0) {
             setNotice('没有获取到音频，请重试或使用文本输入。');
             transition('CANCEL');
+            scheduleWakeWordRestart(session);
             return;
           }
 
@@ -372,6 +532,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
           if (text === null) {
             setNotice('服务端识别暂不可用，请重试或改用文本输入。');
             transition('CANCEL');
+            scheduleWakeWordRestart(session);
           } else {
             processText(text, session, true);
           }
@@ -431,6 +592,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     setInterimText('');
     setNotice('已取消本次聆听。');
     transition('CANCEL');
+    scheduleWakeWordRestart(sessionRef.current);
   }
 
   function stopSpeaking() {
@@ -441,6 +603,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     setDisplayedReply(lastReply);
     setNotice('已停止播报。');
     transition('STOP');
+    scheduleWakeWordRestart(sessionRef.current);
   }
 
   function replay() {
@@ -468,6 +631,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
   useEffect(() => {
     return () => {
       sessionRef.current += 1;
+      wakeWordEnabledRef.current = false;
       recognitionRef.current?.abort();
       if (recorderRef.current?.state === 'recording') recorderRef.current.stop();
       mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -477,6 +641,7 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
       if (typingTimerRef.current) clearInterval(typingTimerRef.current);
       if (recordingTimerRef.current) clearTimeout(recordingTimerRef.current);
       if (finishTimerRef.current) clearTimeout(finishTimerRef.current);
+      if (wakeRestartTimerRef.current) clearTimeout(wakeRestartTimerRef.current);
     };
   }, []);
 
@@ -488,8 +653,11 @@ export function useVoiceDemo(scenarios: Scenario[], settings: SpeechSettings) {
     lastReply,
     lastResult,
     notice,
+    wakeWordEnabled,
     serverConfigured,
     capabilities,
+    startWakeWordMode,
+    stopWakeWordMode,
     startListening,
     finishListening,
     cancelListening,

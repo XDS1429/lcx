@@ -3,13 +3,13 @@ export function getRecognitionConstructor(): SpeechRecognitionConstructor | null
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
-export function createBrowserRecognition(): SpeechRecognition | null {
+export function createBrowserRecognition(continuous = false): SpeechRecognition | null {
   const Recognition = getRecognitionConstructor();
   if (!Recognition) return null;
 
   const recognition = new Recognition();
   recognition.lang = 'zh-CN';
-  recognition.continuous = false;
+  recognition.continuous = continuous;
   recognition.interimResults = true;
   recognition.maxAlternatives = 1;
   return recognition;

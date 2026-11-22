@@ -127,11 +127,14 @@
 }
 
 .voice-button[data-phase='listening']::before,
-.voice-button[data-phase='listening']::after {
+.voice-button[data-phase='listening']::after,
+.voice-button[data-phase='idle'][data-wake-active='true']::before,
+.voice-button[data-phase='idle'][data-wake-active='true']::after {
   animation: voice-ripple 2.4s ease-out infinite;
 }
 
-.voice-button[data-phase='listening']::after {
+.voice-button[data-phase='listening']::after,
+.voice-button[data-phase='idle'][data-wake-active='true']::after {
   animation-delay: 1.2s;
 }
 

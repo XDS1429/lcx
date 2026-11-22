@@ -39,9 +39,12 @@ export function VoiceDemo() {
         <VoiceControl
           phase={voice.phase}
           notice={voice.notice}
+          wakeWordEnabled={voice.wakeWordEnabled}
           serverConfigured={voice.serverConfigured}
           browserRecognition={voice.capabilities.browserRecognition}
           browserSynthesis={voice.capabilities.browserSynthesis}
+          onStartWakeWord={voice.startWakeWordMode}
+          onStopWakeWord={voice.stopWakeWordMode}
           onStart={() => void voice.startListening()}
           onFinish={voice.finishListening}
           onCancel={voice.cancelListening}

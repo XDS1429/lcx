@@ -14,7 +14,7 @@ export const VOICE_PHASES: Array<{
   label: string;
   description: string;
 }> = [
-  { id: 'idle', label: '等待唤醒', description: '准备接收新指令' },
+  { id: 'idle', label: '等待唤醒', description: '说“小张老师”，也可手动或文本输入' },
   { id: 'listening', label: '正在聆听', description: '正在获取识别内容' },
   { id: 'thinking', label: '正在思考', description: '正在匹配固定话术' },
   { id: 'speaking', label: '正在播报', description: '正在播放固定回复' },

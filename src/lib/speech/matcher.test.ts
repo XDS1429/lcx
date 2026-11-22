@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_SCENARIOS, UNMATCHED_REPLY, WAKE_ONLY_REPLY } from './defaults';
-import { matchScenario, resolveSpeechInput } from './matcher';
+import { extractWakeWordInput, matchScenario, resolveSpeechInput } from './matcher';
 import type { Scenario } from './types';
 
 function scenario(overrides: Partial<Scenario>): Scenario {
@@ -15,6 +15,23 @@ function scenario(overrides: Partial<Scenario>): Scenario {
     ...overrides,
   };
 }
+
+describe('待机关键词唤醒', () => {
+  it('忽略未包含唤醒词的普通环境对话', () => {
+    expect(extractWakeWordInput('今天天气不错，孩子正在午睡')).toBeNull();
+  });
+
+  it('从背景对话中提取唤醒词和后续指令', () => {
+    expect(extractWakeWordInput('你好，小张老师，孩子发烧怎么办')).toBe(
+      '小张老师孩子发烧怎么办',
+    );
+  });
+
+  it('仅听到唤醒词时保留标准唤醒输入', () => {
+    expect(extractWakeWordInput('嗯，小张老师。')).toBe('小张老师');
+    expect(extractWakeWordInput('小张老')).toBeNull();
+  });
+});
 
 describe('语音指令匹配', () => {
   it('仅唤醒词时固定逐字回复', () => {

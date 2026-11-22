@@ -7,6 +7,12 @@ export function normalizeSpeechText(value: string): string {
   return value.toLocaleLowerCase('zh-CN').replace(/[^0-9a-z\u3400-\u9fff]/g, '');
 }
 
+export function extractWakeWordInput(input: string): string | null {
+  const normalizedInput = normalizeSpeechText(input);
+  const wakeWordIndex = normalizedInput.indexOf(WAKE_WORD);
+  return wakeWordIndex === -1 ? null : normalizedInput.slice(wakeWordIndex);
+}
+
 function toBigrams(value: string): string[] {
   if (value.length < 2) {
     return value ? [value] : [];
