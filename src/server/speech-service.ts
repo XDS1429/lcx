@@ -7,6 +7,8 @@ interface SynthesizeSpeechInput {
   forwardHeaders: Record<string, string>;
 }
 
+const DEFAULT_SPEECH_RATE = -8;
+
 export function isServerSpeechConfigured(): boolean {
   try {
     const config = new Config();
@@ -34,7 +36,7 @@ export async function synthesizeSpeech({
     speaker: 'zh_female_santongyongns_saturn_bigtts',
     audioFormat: 'mp3',
     sampleRate: 24000,
-    speechRate: Math.round(clamp((rate - 1) * 100, -50, 100)),
+    speechRate: Math.round(clamp((rate - 1) * 100 + DEFAULT_SPEECH_RATE, -50, 100)),
     loudnessRate: Math.round(clamp((volume - 0.5) * 100, -50, 50)),
   });
 
