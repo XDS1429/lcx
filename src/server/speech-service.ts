@@ -9,9 +9,24 @@ interface SynthesizeSpeechInput {
 
 const DEFAULT_SPEECH_RATE = -8;
 
+function runtimeApiKey(): string | undefined {
+  return process.env.COZE_API_TOKEN?.trim() || process.env.COZE_WORKLOAD_API_TOKEN?.trim() || undefined;
+}
+
+function createSpeechConfig(): Config {
+  const apiKey = runtimeApiKey();
+  if (apiKey && !process.env.COZE_API_TOKEN) {
+    process.env.COZE_API_TOKEN = apiKey;
+  }
+  return new Config();
+}
+
 export function isServerSpeechConfigured(): boolean {
+  if (runtimeApiKey()) {
+    return true;
+  }
   try {
-    const config = new Config();
+    const config = createSpeechConfig();
     return Boolean(config.apiKey) || config.usesUserRuntimeAuth();
   } catch {
     return false;
@@ -28,7 +43,7 @@ export async function synthesizeSpeech({
   volume,
   forwardHeaders,
 }: SynthesizeSpeechInput): Promise<ArrayBuffer> {
-  const config = new Config();
+  const config = createSpeechConfig();
   const client = new TTSClient(config, forwardHeaders);
   const result = await client.synthesize({
     uid: 'xiao-zhang-teacher-demo',
@@ -55,7 +70,7 @@ export async function recognizeSpeech(
   audioBase64: string,
   forwardHeaders: Record<string, string>,
 ): Promise<string> {
-  const config = new Config();
+  const config = createSpeechConfig();
   const client = new ASRClient(config, forwardHeaders);
   const result = await client.recognize({
     uid: 'xiao-zhang-teacher-demo',
