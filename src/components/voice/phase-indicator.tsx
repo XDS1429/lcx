@@ -11,7 +11,7 @@ const phaseIcons: Record<VoicePhase, LucideIcon> = {
 
 export function PhaseIndicator({ phase }: { phase: VoicePhase }) {
   return (
-    <ol className="grid w-full grid-cols-2 gap-2" aria-label="语音交互阶段">
+    <ol className="grid w-full grid-cols-2 gap-2.5" aria-label="语音交互阶段">
       {VOICE_PHASES.map((item, index) => {
         const active = item.id === phase;
         const Icon = phaseIcons[item.id];
@@ -20,20 +20,20 @@ export function PhaseIndicator({ phase }: { phase: VoicePhase }) {
             key={item.id}
             aria-current={active ? 'step' : undefined}
             className={cn(
-              'relative min-h-[78px] rounded-[17px] border p-3 transition-all duration-300',
+              'relative min-h-[104px] rounded-[18px] border p-3.5 transition-all duration-300',
               active
                 ? 'border-[#526a55] bg-[#526a55] text-white shadow-[0_8px_22px_rgba(82,106,85,0.18)]'
-                : 'border-[#e7e1d5] bg-[#fbf8f1] text-[#68766b]',
+                : 'border-[#ddd7ca] bg-[#fbf8f1] text-[#526158]',
             )}
           >
             <div className="flex items-center justify-between gap-2">
-              <Icon className={cn('size-4', active ? 'text-[#f4e2ce]' : 'text-[#8a978b]')} />
-              <span className={cn('tabular-number text-[10px]', active ? 'text-white/60' : 'text-[#9a9f96]')}>
+              <Icon className={cn('size-5', active ? 'text-[#f4e2ce]' : 'text-[#68766b]')} aria-hidden="true" />
+              <span className={cn('tabular-number text-xs font-semibold', active ? 'text-white/80' : 'text-[#5f6d63]')}>
                 0{index + 1}
               </span>
             </div>
-            <p className={cn('mt-2 text-sm font-semibold', active ? 'text-white' : 'text-[#526158]')}>{item.label}</p>
-            <p className={cn('mt-0.5 hidden text-[10px] sm:block', active ? 'text-white/70' : 'text-[#879087]')}>
+            <p className={cn('mt-2 text-base font-bold sm:text-lg', active ? 'text-white' : 'text-[#425a49]')}>{item.label}</p>
+            <p className={cn('mt-1 text-sm font-medium leading-6 sm:text-base', active ? 'text-white/85' : 'text-[#5f6d63]')}>
               {item.description}
             </p>
           </li>

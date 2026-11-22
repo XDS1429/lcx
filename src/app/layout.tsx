@@ -20,7 +20,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <div className="relative min-h-screen overflow-x-hidden">
             <AppHeader />
             <main className="relative z-10">{children}</main>
-            <footer className="relative z-10 mx-auto flex max-w-[1440px] flex-col gap-2 px-5 pb-7 pt-10 text-xs leading-5 text-[#718076] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10">
+            <footer className="relative z-10 mx-auto flex w-full max-w-[1720px] flex-col gap-2 px-5 pb-8 pt-12 text-base font-medium leading-7 text-[#5f6d63] sm:flex-row sm:items-center sm:justify-between sm:px-8 lg:px-10 2xl:px-12">
               <span>小张老师 · 托育照护语音交互演示</span>
               <span>固定话术驱动 · 不调用大模型生成回复 · 不接入传感器</span>
             </footer>

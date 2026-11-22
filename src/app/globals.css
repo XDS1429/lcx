@@ -48,7 +48,7 @@
   --secondary: #edf0e7;
   --secondary-foreground: #425a49;
   --muted: #f2eee5;
-  --muted-foreground: #68766b;
+  --muted-foreground: #5f6d63;
   --accent: #f4e2ce;
   --accent-foreground: #704c30;
   --destructive: #b75c50;
@@ -67,7 +67,7 @@
   }
 
   body {
-    @apply bg-background font-sans text-foreground antialiased;
+    @apply bg-background font-sans text-base text-foreground antialiased;
     min-width: 320px;
   }
 
